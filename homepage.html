@@ -383,6 +383,14 @@ input[type="hidden"]#feeling {
     </div>
     <div id="posts"></div>
         <script>
+          https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2script>
+const supabaseUrl = "https://supabase.com/dashboard/project/btrycwhwyddoutgmzilo";
+const supabaseKey = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2script>";
+const supabase = window.supabase.createClient(
+  supabaseUrl,
+  supabaseKey
+);
+
        const form = document.getElementById("postForm");
 const postsContainer = document.getElementById("posts");
 const imageUpload = document.getElementById("imageUpload");
@@ -400,6 +408,16 @@ moodChoices.forEach(button => {
     });
 });
 
+          imageUpload.addEventListener("change", () => {
+    const file = imageUpload.files[0];
+
+    if (!file) return;
+
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = "block";
+});
+
+          
 async function getCurrentUser() {
     const { data: { user } } = await supabase.auth.getUser();
     return user;
