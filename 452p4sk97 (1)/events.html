@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>~* Planned Events *~</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 20px;
+        font-family: Verdana, Geneva, Tahoma, sans-serif;
+        font-size: 13px;
+      }
+
+      .events-wrap {
+        width: 100%;
+        max-width: 900px;
+        margin: 0 auto;
+      }
+
+      .events-back {
+        display: inline-block;
+        margin-bottom: 12px;
+      }
+
+      .event-form,
+      .event-card {
+        margin: 16px 0;
+        padding: 20px;
+      }
+
+      .event-form label {
+        display: block;
+        margin: 12px 0 5px;
+        font-weight: bold;
+      }
+
+      .event-form input,
+      .event-form textarea {
+        display: block;
+        width: 100%;
+      }
+
+      .event-form textarea {
+        min-height: 80px;
+        resize: vertical;
+      }
+
+      .event-form button {
+        margin-top: 14px;
+      }
+
+      .event-card h2 {
+        margin-top: 0;
+      }
+
+      .event-details {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+
+      .event-meta,
+      .rsvp-summary {
+        color: #4e6670;
+      }
+
+      .rsvp-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 14px 0;
+      }
+
+      .rsvp-actions button[aria-pressed="true"] {
+        outline: 3px solid rgba(255, 255, 255, .9);
+        box-shadow: 0 0 0 5px rgba(8, 117, 168, .35), inset 0 2px 0 #fff;
+      }
+
+      .rsvp-list {
+        padding-left: 20px;
+      }
+
+      .event-chat {
+        margin-top: 18px;
+        padding-top: 14px;
+        border-top: 1px solid rgba(8, 117, 168, .2);
+      }
+
+      .event-chat h3 {
+        margin: 0 0 8px;
+      }
+
+      .event-chat-messages {
+        max-height: 220px;
+        overflow-y: auto;
+      }
+
+      .event-chat-message {
+        margin: 8px 0;
+        padding: 9px 12px;
+        border: 1px solid rgba(255, 255, 255, .95);
+        border-radius: 12px;
+        background: linear-gradient(150deg, rgba(255, 255, 255, .98), rgba(223, 248, 255, .94) 48%, rgba(189, 235, 247, .9));
+        box-shadow: inset 0 2px 0 rgba(255, 255, 255, .95), inset 0 -2px 5px rgba(48, 151, 184, .12), 0 3px 8px rgba(36, 119, 148, .18);
+        overflow-wrap: anywhere;
+      }
+
+      .event-chat-meta {
+        margin-top: 4px;
+        color: #4e6670;
+        font-size: 11px;
+      }
+
+      .event-chat-form textarea {
+        display: block;
+        box-sizing: border-box;
+        width: 100%;
+        min-height: 60px;
+        margin-top: 8px;
+        resize: vertical;
+      }
+
+      .event-chat-form button {
+        margin-top: 8px;
+      }
+
+      .delete-event {
+        margin-top: 8px;
+      }
+
+      #events-message {
+        min-height: 1em;
+      }
+
+      .dolphin-art {
+        display: block;
+        width: min(100%, 340px);
+        height: auto;
+        margin: 12px auto -4px;
+        filter: drop-shadow(0 5px 4px rgba(0, 75, 115, .2));
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      @media (max-width: 600px) {
+        body { padding: 12px; }
+        .event-form,
+        .event-card { padding: 15px; }
+      }
+    </style>
+    <link rel="stylesheet" href="social-theme.css">
+  </head>
+  <body class="theme-metro">
+    <main class="events-wrap">
+      <a class="events-back" href="homepage.html">← Back to blog</a>
+      <header>
+        <h1>Planned events</h1>
+        <p>Make a plan, invite your friends, and see who can make it!</p>
+        <svg class="dolphin-art" viewBox="0 0 360 150" role="img" aria-label="Two glossy blue dolphins swimming through bubbles">
+          <defs>
+            <linearGradient id="dolphinBlue" x1="0" y1="0" x2="0.8" y2="1">
+              <stop offset="0" stop-color="#e7ffff" />
+              <stop offset=".35" stop-color="#45d5ed" />
+              <stop offset="1" stop-color="#0875a8" />
+            </linearGradient>
+            <linearGradient id="dolphinLight" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#ffffff" />
+              <stop offset="1" stop-color="#9ceefa" />
+            </linearGradient>
+          </defs>
+          <g fill="none" stroke="#fff" stroke-width="3" opacity=".8">
+            <circle cx="48" cy="37" r="9"/><circle cx="73" cy="19" r="5"/><circle cx="300" cy="35" r="8"/><circle cx="324" cy="18" r="4"/>
+          </g>
+          <g>
+            <path d="M46 98c29-8 44-37 69-42 19-4 29 6 43 7-11 8-16 18-25 24 27-4 48-1 64 8-23-2-39 5-54 18-17 14-41 20-61 13 11-6 17-12 20-19-18 8-37 10-56-9z" fill="url(#dolphinBlue)" stroke="#fff" stroke-width="3" stroke-linejoin="round"/>
+            <path d="M83 99c20 2 38-2 54-11-12 13-28 23-48 26" fill="url(#dolphinLight)" opacity=".9"/>
+            <path d="M121 57c-1-13 5-22 15-29 0 13 5 21 14 29M133 111c9 8 18 11 30 12-9-11-11-19-8-27" fill="url(#dolphinBlue)" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+            <circle cx="146" cy="68" r="2.5" fill="#075575"/>
+          </g>
+          <g transform="translate(93 34) scale(.68)">
+            <path d="M46 98c29-8 44-37 69-42 19-4 29 6 43 7-11 8-16 18-25 24 27-4 48-1 64 8-23-2-39 5-54 18-17 14-41 20-61 13 11-6 17-12 20-19-18 8-37 10-56-9z" fill="url(#dolphinBlue)" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>
+            <path d="M83 99c20 2 38-2 54-11-12 13-28 23-48 26" fill="url(#dolphinLight)" opacity=".9"/>
+            <path d="M121 57c-1-13 5-22 15-29 0 13 5 21 14 29M133 111c9 8 18 11 30 12-9-11-11-19-8-27" fill="url(#dolphinBlue)" stroke="#fff" stroke-width="3" stroke-linejoin="round"/>
+            <circle cx="146" cy="68" r="3" fill="#075575"/>
+          </g>
+        </svg>
+      </header>
+
+      <p id="events-message" role="status"></p>
+      <p id="sign-in-note"></p>
+
+      <section class="event-form panel" id="event-form-panel">
+        <h2>Plan an activity</h2>
+        <form id="event-form">
+          <label for="event-title">What are you planning?</label>
+          <input id="event-title" type="text" maxlength="80" required placeholder="Beach day, movie night...">
+          <label for="event-description">Details (optional)</label>
+          <textarea id="event-description" maxlength="1000" placeholder="Share the plan with your friends"></textarea>
+          <label for="event-location">Where?</label>
+          <input id="event-location" type="text" maxlength="120" placeholder="Place or meeting point">
+          <label for="event-date">When?</label>
+          <input id="event-date" type="datetime-local" required>
+          <button type="submit">Create event</button>
+        </form>
+      </section>
+
+      <section aria-labelledby="events-heading">
+        <h2 id="events-heading">Upcoming plans</h2>
+        <div id="events-list" aria-live="polite"></div>
+      </section>
+    </main>
+
+    <script>
+      const eventsKey = 'blogEvents';
+      const currentUser = localStorage.getItem('currentUser') || '';
+      const eventForm = document.getElementById('event-form');
+      const eventFormPanel = document.getElementById('event-form-panel');
+      const eventsList = document.getElementById('events-list');
+      const eventsMessage = document.getElementById('events-message');
+      const signInNote = document.getElementById('sign-in-note');
+      let events = [];
+
+      if (!currentUser) {
+        signInNote.textContent = 'Log in to plan an activity or RSVP. You can still browse events.';
+        eventFormPanel.hidden = true;
+      } else {
+        signInNote.textContent = 'Signed in as ' + currentUser + '. Choose a response on any event.';
+      }
+
+      function readEvents() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(eventsKey) || '[]');
+          return Array.isArray(saved) ? saved : [];
+        } catch (error) {
+          return [];
+        }
+      }
+
+      function saveEvents() {
+        try {
+          localStorage.setItem(eventsKey, JSON.stringify(events));
+          return true;
+        } catch (error) {
+          events = readEvents();
+          eventsMessage.textContent = 'Could not save events in this browser.';
+          return false;
+        }
+      }
+
+      function formatEventDate(value) {
+        const date = new Date(value);
+        return isNaN(date.getTime()) ? 'Date unavailable' : date.toLocaleString();
+      }
+
+      function renderEvents() {
+        eventsList.replaceChildren();
+        events = readEvents().filter(function (item) {
+          return item && typeof item === 'object' && typeof item.id === 'string';
+        });
+        events.sort(function (first, second) {
+          return String(first.date || '').localeCompare(String(second.date || ''));
+        });
+
+        if (events.length === 0) {
+          const empty = document.createElement('p');
+          empty.className = 'event-card panel';
+          empty.textContent = 'No activities planned yet. Be the first to make a plan!';
+          eventsList.appendChild(empty);
+          return;
+        }
+
+        events.forEach(function (item) {
+          const card = document.createElement('article');
+          card.className = 'event-card panel';
+
+          const title = document.createElement('h2');
+          title.textContent = item.title || 'Untitled event';
+          card.appendChild(title);
+
+          const meta = document.createElement('p');
+          meta.className = 'event-meta';
+          meta.textContent = formatEventDate(item.date) +
+            (item.location ? ' · ' + item.location : '') +
+            (item.host ? ' · Planned by ' + item.host : '');
+          card.appendChild(meta);
+
+          if (item.description) {
+            const description = document.createElement('p');
+            description.className = 'event-details';
+            description.textContent = item.description;
+            card.appendChild(description);
+          }
+
+          const responses = item.responses && typeof item.responses === 'object' ? item.responses : {};
+          const summary = document.createElement('p');
+          summary.className = 'rsvp-summary';
+          const responseCounts = { yes: 0, no: 0, maybe: 0 };
+          Object.values(responses).forEach(function (response) {
+            if (response && responseCounts[response.status] !== undefined) responseCounts[response.status]++;
+          });
+          summary.textContent = 'Can make it: ' + responseCounts.yes +
+            ' · Can’t make it: ' + responseCounts.no + ' · Not sure: ' + responseCounts.maybe;
+          card.appendChild(summary);
+
+          const actions = document.createElement('div');
+          actions.className = 'rsvp-actions';
+          [
+            { status: 'yes', label: 'I can be there!' },
+            { status: 'no', label: 'I can’t make it' },
+            { status: 'maybe', label: 'I’m not sure yet' }
+          ].forEach(function (choice) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = choice.label;
+            button.disabled = !currentUser;
+            button.setAttribute('aria-pressed', String(Boolean(
+              currentUser && responses[currentUser.toLowerCase()] &&
+              responses[currentUser.toLowerCase()].status === choice.status
+            )));
+            button.addEventListener('click', function () {
+              if (!currentUser) return;
+              item.responses = item.responses && typeof item.responses === 'object' ? item.responses : {};
+              item.responses[currentUser.toLowerCase()] = { name: currentUser, status: choice.status };
+              if (saveEvents()) renderEvents();
+            });
+            actions.appendChild(button);
+          });
+          card.appendChild(actions);
+
+          const attendeeList = document.createElement('ul');
+          attendeeList.className = 'rsvp-list';
+          Object.values(responses).forEach(function (response) {
+            if (!response || !response.name || !response.status) return;
+            const attendee = document.createElement('li');
+            const statusLabels = { yes: 'can make it', no: 'can’t make it', maybe: 'is not sure yet' };
+            attendee.textContent = response.name + ' ' + (statusLabels[response.status] || 'responded');
+            attendeeList.appendChild(attendee);
+          });
+          if (attendeeList.childElementCount) card.appendChild(attendeeList);
+
+          const chat = document.createElement('section');
+          chat.className = 'event-chat';
+          const chatHeading = document.createElement('h3');
+          chatHeading.textContent = 'Event chat';
+          chat.appendChild(chatHeading);
+
+          const chatMessages = document.createElement('div');
+          chatMessages.className = 'event-chat-messages';
+          chatMessages.setAttribute('aria-live', 'polite');
+          const messages = Array.isArray(item.messages) ? item.messages : [];
+          if (messages.length === 0) {
+            const emptyChat = document.createElement('p');
+            emptyChat.textContent = 'No messages yet. Start the conversation!';
+            chatMessages.appendChild(emptyChat);
+          } else {
+            messages.forEach(function (message) {
+              if (!message || typeof message !== 'object') return;
+              const messageCard = document.createElement('article');
+              messageCard.className = 'event-chat-message';
+              const messageText = document.createElement('div');
+              messageText.textContent = message.text || '';
+              const messageMeta = document.createElement('div');
+              messageMeta.className = 'event-chat-meta';
+              const messageDate = new Date(message.time);
+              messageMeta.textContent = (message.author || 'Unknown') + ' · ' +
+                (isNaN(messageDate.getTime()) ? 'Time unknown' : messageDate.toLocaleString());
+              messageCard.append(messageText, messageMeta);
+              chatMessages.appendChild(messageCard);
+            });
+          }
+          chat.appendChild(chatMessages);
+
+          if (currentUser) {
+            const chatForm = document.createElement('form');
+            chatForm.className = 'event-chat-form';
+            const messageInput = document.createElement('textarea');
+            messageInput.maxLength = 1000;
+            messageInput.required = true;
+            messageInput.placeholder = 'Write a message about this event...';
+            messageInput.setAttribute('aria-label', 'Message about ' + (item.title || 'this event'));
+            const sendButton = document.createElement('button');
+            sendButton.type = 'submit';
+            sendButton.textContent = 'Send message';
+            chatForm.append(messageInput, sendButton);
+            chatForm.addEventListener('submit', function (submitEvent) {
+              submitEvent.preventDefault();
+              const text = messageInput.value.trim();
+              if (!text) return;
+
+              const eventToUpdate = events.find(function (savedEvent) {
+                return savedEvent.id === item.id;
+              });
+              if (!eventToUpdate) return;
+              eventToUpdate.messages = Array.isArray(eventToUpdate.messages) ? eventToUpdate.messages : [];
+              eventToUpdate.messages.push({
+                author: currentUser,
+                text: text,
+                time: new Date().toISOString()
+              });
+              if (saveEvents()) renderEvents();
+            });
+            chat.appendChild(chatForm);
+          } else {
+            const signInPrompt = document.createElement('p');
+            signInPrompt.textContent = 'Log in to join the conversation.';
+            chat.appendChild(signInPrompt);
+          }
+          card.appendChild(chat);
+
+          if (currentUser && item.host && item.host.toLowerCase() === currentUser.toLowerCase()) {
+            const deleteButton = document.createElement('button');
+            deleteButton.type = 'button';
+            deleteButton.className = 'delete-event';
+            deleteButton.textContent = 'Delete this event';
+            deleteButton.addEventListener('click', function () {
+              events = events.filter(function (saved) { return saved.id !== item.id; });
+              if (saveEvents()) renderEvents();
+            });
+            card.appendChild(deleteButton);
+          }
+
+          eventsList.appendChild(card);
+        });
+      }
+
+      eventForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        if (!currentUser) return;
+
+        const title = document.getElementById('event-title').value.trim();
+        const dateValue = document.getElementById('event-date').value;
+        const eventDate = new Date(dateValue);
+        if (!title || !dateValue || isNaN(eventDate.getTime())) {
+          eventsMessage.textContent = 'Please add an event name and a valid date and time.';
+          return;
+        }
+
+        events = readEvents();
+        events.push({
+          id: Date.now().toString() + Math.random().toString(16).slice(2),
+          title: title,
+          description: document.getElementById('event-description').value.trim(),
+          location: document.getElementById('event-location').value.trim(),
+          date: eventDate.toISOString(),
+          host: currentUser,
+          responses: {}
+        });
+
+        if (saveEvents()) {
+          eventForm.reset();
+          eventsMessage.textContent = 'Your event has been added.';
+          renderEvents();
+        }
+      });
+
+      window.addEventListener('storage', function (event) {
+        if (event.key === eventsKey) renderEvents();
+      });
+
+      renderEvents();
+    </script>
+  </body>
+</html>

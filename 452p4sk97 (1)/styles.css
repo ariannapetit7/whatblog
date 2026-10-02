@@ -1,0 +1,34 @@
+
+
+body{
+background: linear-gradient(black, midnightblue, purple,pink);
+  min-height: 100vh;
+  padding: 25px;
+  margin: 0 auto:
+}
+.title {
+  text-align: center;
+	color: lightgoldenrodyellow;
+
+}
+.login {
+  position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 20px;
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+    background-color: rgba(255, 255, 255, 0.1);
+    color: beige;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+}
+ a {
+  color: gold;
+   }
+ a:hover {
+  background-color: darkgoldenrod;
+  color: palegoldenrod;
+ }
+
+}

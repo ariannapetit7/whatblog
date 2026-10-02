@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create account</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="social-theme.css">
+  </head>
+  <body class="auth-page theme-lilac">
+    <h1 class="title">Sign up</h1>
+    <div class="login">
+      <form id="Signup-form" class="Login">
+        <input
+          type="email"
+          id="email"
+          name="email"
+          placeholder="Email address"
+          autocomplete="email"
+          required
+        >
+        <input
+          type="text"
+          id="username"
+          name="username"
+          placeholder="Username (4–10 characters)"
+          minlength="4"
+          maxlength="10"
+          autocomplete="username"
+          required
+        >
+        <input
+          type="password"
+          id="password"
+          name="password"
+          placeholder="Password (8–64 characters)"
+          minlength="8"
+          maxlength="64"
+          autocomplete="new-password"
+          required
+        >
+        <button type="submit">CREATE ACCOUNT</button>
+      </form>
+      <p id="auth-message" role="status"></p>
+      <p>Already have an account? <a href="index.html">Log in</a></p>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
