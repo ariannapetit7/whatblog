@@ -383,311 +383,131 @@ input[type="hidden"]#feeling {
     </div>
     <div id="posts"></div>
         <script>
-        const resetMarker = 'blogDataReset_v2';
-        try {
-            if (localStorage.getItem(resetMarker) !== 'done') {
-                [
-                    'blogAccounts',
-                    'blogPosts',
-                    'blogEvents',
-                    'blogQuotes',
-                    'blogProfiles',
-                    'blogFriends',
-                    'blogMessages',
-                    'currentUser'
-                ].forEach(function (key) {
-                    localStorage.removeItem(key);
-                });
-                localStorage.setItem(resetMarker, 'done');
-            }
-        } catch (error) {
-            // Storage may be unavailable in some browser contexts.
-        }
+       const form = document.getElementById("postForm");
+const postsContainer = document.getElementById("posts");
+const imageUpload = document.getElementById("imageUpload");
+const preview = document.getElementById("preview");
+const feelingInput = document.getElementById("feeling");
+const moodChoices = document.querySelectorAll(".mood-choice");
 
-        const form = document.getElementById('postForm');
-        const postsContainer = document.getElementById('posts');
-        const imageUpload = document.getElementById('imageUpload');
-        const preview = document.getElementById('preview');
-        const storageKey = 'blogPosts';
-        const currentUser = localStorage.getItem('currentUser') || '';
-        let posts = [];
-        const moodLabels = {
-            happy: 'Exited',
-            cool: 'Cool',
-            loved: 'Loved',
-            sad: 'Tired',
-            frustrated: 'Frustrated',
-            tired: 'Sad',
-            excited: 'Happy',
-            sinister: 'Sinister',
-            scared: 'scared',
-            nostalgic: 'nostalgic',
-            hot: 'hot',
-            shocked: 'shocked',
-            suspicios: 'suspicios'
-        };
-        const feelingInput = document.getElementById('feeling');
-        const moodChoices = document.querySelectorAll('.mood-choice');
-
-        moodChoices.forEach(function (choice) {
-            choice.addEventListener('click', function () {
-                const selectedMood = choice.dataset.mood;
-                feelingInput.value = feelingInput.value === selectedMood ? '' : selectedMood;
-                moodChoices.forEach(function (button) {
-                    button.setAttribute('aria-pressed', String(button.dataset.mood === feelingInput.value));
-                });
-            });
+moodChoices.forEach(button => {
+    button.addEventListener("click", () => {
+        const mood = button.dataset.mood;
+        feelingInput.value = feelingInput.value === mood ? "" : mood;
+        moodChoices.forEach(choice => {
+            choice.setAttribute("aria-pressed", String(choice.dataset.mood === feelingInput.value));
         });
+    });
+});
 
-        function savePostReactions() {
-            try {
-                localStorage.setItem(storageKey, JSON.stringify(posts));
-            } catch (error) {
-                // Keep the current page usable if browser storage is full or unavailable.
-            }
-            postsContainer.replaceChildren();
-            posts.slice().reverse().forEach(renderPost);
-        }
+async function getCurrentUser() {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user;
+}
 
-        function renderPost(post) {
-            const postDiv = document.createElement('div');
-            postDiv.classList.add('post');
+async function loadPosts() {
+    postsContainer.innerHTML = "";
 
-            const postTitle = document.createElement('div');
-            postTitle.classList.add('post-title');
-            postTitle.textContent = post.title;
+    const { data, error } = await supabase
+        .from("posts")
+        .select(`*, profiles!posts_author_id_fkey(username)`)
+        .order("created_at", { ascending: false });
 
-            const postContent = document.createElement('div');
-            postContent.classList.add('post-content');
-            postContent.textContent = post.content;
+    if (error) {
+        console.error(error);
+        return;
+    }
 
-            postDiv.appendChild(postTitle);
-            postDiv.appendChild(postContent);
+    const user = await getCurrentUser();
 
-            if (post.feeling) {
-                const feeling = document.createElement('div');
-                feeling.classList.add('post-feeling');
-                const moodName = moodLabels[post.feeling];
-                if (moodName) {
-                    const moodChoice = document.querySelector('.mood-choice[data-mood="' + post.feeling + '"]');
-                    const pickerIcon = moodChoice && moodChoice.querySelector('.mood-icon');
-                    if (pickerIcon) {
-                        const moodIcon = pickerIcon.cloneNode(true);
-                        moodIcon.setAttribute('aria-hidden', 'true');
-                        feeling.appendChild(moodIcon);
-                    }
-                    const moodText = document.createElement('span');
-                    moodText.textContent = 'Feeling ' + moodName;
-                    feeling.appendChild(moodText);
-                } else {
-                    feeling.textContent = 'Feeling ' + post.feeling;
+    data.forEach(post => {
+        const card = document.createElement("div");
+        card.className = "post";
+
+        const username = post.profiles?.username || "Unknown User";
+
+        card.innerHTML = `
+            <h3>${post.title}</h3>
+            <div class="post-author">Posted by ${username}</div>
+            <p>${post.content}</p>
+            ${post.feeling ? `<div class="post-feeling">Feeling ${post.feeling}</div>` : ""}
+            ${post.image_url ? `<img src="${post.image_url}" alt="Post image">` : ""}
+        `;
+
+        if (user && user.id === post.author_id) {
+            const deleteButton = document.createElement("button");
+            deleteButton.className = "delete-post";
+            deleteButton.textContent = "Delete Post";
+
+            deleteButton.onclick = async () => {
+                const { error } = await supabase
+                    .from("posts")
+                    .delete()
+                    .eq("id", post.id);
+
+                if (error) {
+                    alert(error.message);
+                    return;
                 }
-                postDiv.appendChild(feeling);
-            }
 
-            if (post.author) {
-                const author = document.createElement('div');
-                author.classList.add('post-author');
-                author.textContent = 'Posted by ';
-                const profileLink = document.createElement('a');
-                profileLink.href = 'Profile.html?user=' + encodeURIComponent(post.author);
-                profileLink.textContent = post.author;
-                author.appendChild(profileLink);
-                postDiv.appendChild(author);
-            }
-
-            if (post.image) {
-                const postImage = document.createElement('img');
-                postImage.src = post.image;
-                postImage.alt = 'Post image';
-                postDiv.appendChild(postImage);
-            }
-
-            const reactionUser = currentUser.toLowerCase() || 'guest';
-            const reactions = post.reactions && typeof post.reactions === 'object' ? post.reactions : {};
-            const reactionBar = document.createElement('div');
-            reactionBar.className = 'post-reactions';
-
-            function countVote(vote) {
-                return Object.values(reactions).filter(function (reaction) {
-                    return reaction && reaction.vote === vote;
-                }).length;
-            }
-
-            function addReactionButton(label, count, pressed, onClick, className) {
-                const button = document.createElement('button');
-                button.type = 'button';
-                button.textContent = label + (count ? ' ' + count : '');
-                button.setAttribute('aria-pressed', String(pressed));
-                if (className) button.className = className;
-                button.addEventListener('click', onClick);
-                reactionBar.appendChild(button);
-            }
-
-            ['like', 'dislike'].forEach(function (vote) {
-                const label = vote === 'like' ? '👍 Like' : '👎 Dislike';
-                addReactionButton(label, countVote(vote), reactions[reactionUser] && reactions[reactionUser].vote === vote, function () {
-                    const myReaction = reactions[reactionUser] || { vote: '', emojis: [] };
-                    myReaction.vote = myReaction.vote === vote ? '' : vote;
-                    if (!myReaction.vote && (!myReaction.emojis || myReaction.emojis.length === 0)) {
-                        delete reactions[reactionUser];
-                    } else {
-                        reactions[reactionUser] = myReaction;
-                    }
-                    post.reactions = reactions;
-                    savePostReactions();
-                });
-            });
-
-            ['❤️', '😂', '😮', '😢'].forEach(function (emoji) {
-                const myReaction = reactions[reactionUser] || { emojis: [] };
-                const selected = Array.isArray(myReaction.emojis) && myReaction.emojis.includes(emoji);
-                const count = Object.values(reactions).filter(function (reaction) {
-                    return reaction && Array.isArray(reaction.emojis) && reaction.emojis.includes(emoji);
-                }).length;
-                addReactionButton(emoji, count, selected, function () {
-                    const updatedReaction = reactions[reactionUser] || { vote: '', emojis: [] };
-                    updatedReaction.emojis = Array.isArray(updatedReaction.emojis) ? updatedReaction.emojis : [];
-                    const index = updatedReaction.emojis.indexOf(emoji);
-                    if (index >= 0) updatedReaction.emojis.splice(index, 1);
-                    else updatedReaction.emojis.push(emoji);
-                    if (!updatedReaction.vote && updatedReaction.emojis.length === 0) {
-                        delete reactions[reactionUser];
-                    } else {
-                        reactions[reactionUser] = updatedReaction;
-                    }
-                    post.reactions = reactions;
-                    savePostReactions();
-                }, 'post-reaction-emoji');
-            });
-            postDiv.appendChild(reactionBar);
-
-            const commentsSection = document.createElement('section');
-            commentsSection.className = 'post-comments';
-            const commentsHeading = document.createElement('strong');
-            commentsHeading.textContent = 'Comments';
-            commentsSection.appendChild(commentsHeading);
-
-            const comments = Array.isArray(post.comments) ? post.comments : [];
-            comments.forEach(function (comment) {
-                const commentCard = document.createElement('article');
-                commentCard.className = 'post-comment';
-                const commentText = document.createElement('div');
-                commentText.textContent = comment.text || '';
-                const commentMeta = document.createElement('div');
-                commentMeta.className = 'post-comment-meta';
-                const commentDate = new Date(comment.time);
-                commentMeta.textContent = (comment.author || 'Guest') + ' · ' +
-                    (isNaN(commentDate.getTime()) ? 'Time unknown' : commentDate.toLocaleString());
-                commentCard.append(commentText, commentMeta);
-                commentsSection.appendChild(commentCard);
-            });
-
-            const commentForm = document.createElement('form');
-            commentForm.className = 'post-comment-form';
-            const commentInput = document.createElement('textarea');
-            commentInput.maxLength = 1000;
-            commentInput.required = true;
-            commentInput.placeholder = 'Write a comment...';
-            commentInput.setAttribute('aria-label', 'Comment on ' + (post.title || 'this post'));
-            const commentButton = document.createElement('button');
-            commentButton.type = 'submit';
-            commentButton.textContent = 'Comment';
-            commentForm.append(commentInput, commentButton);
-            commentForm.addEventListener('submit', function (event) {
-                event.preventDefault();
-                const text = commentInput.value.trim();
-                if (!text) return;
-
-                post.comments = Array.isArray(post.comments) ? post.comments : [];
-                post.comments.push({
-                    author: currentUser || 'Guest',
-                    text: text,
-                    time: new Date().toISOString()
-                });
-                savePostReactions();
-            });
-            commentsSection.appendChild(commentForm);
-            postDiv.appendChild(commentsSection);
-
-            if (currentUser && post.author === currentUser) {
-                const deleteButton = document.createElement('button');
-                deleteButton.type = 'button';
-                deleteButton.classList.add('delete-post');
-                deleteButton.textContent = 'Delete post';
-                deleteButton.addEventListener('click', function () {
-                    posts = posts.filter(function (item) {
-                        return item.id !== post.id;
-                    });
-                    localStorage.setItem(storageKey, JSON.stringify(posts));
-                    postsContainer.innerHTML = '';
-                    posts.slice().reverse().forEach(renderPost);
-                });
-                postDiv.appendChild(deleteButton);
-            }
-
-            postsContainer.prepend(postDiv);
-        }
-
-        try {
-            posts = JSON.parse(localStorage.getItem(storageKey) || '[]');
-            posts.slice().reverse().forEach(renderPost);
-        } catch (error) {
-            posts = [];
-        }
-
-        imageUpload.addEventListener('change', function () {
-            const file = this.files[0];
-            if (!file) {
-                preview.src = '#';
-                preview.style.display = 'none';
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = function (event) {
-                preview.src = event.target.result;
-                preview.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-        });
-
-        form.addEventListener('submit', function(event) {
-            event.preventDefault();
-
-            const title = document.getElementById('title').value.trim();
-            const content = document.getElementById('content').value.trim();
-
-            if (!title || !content) {
-                alert('Please fill in both fields.');
-                return;
-            }
-
-            const post = {
-                id: Date.now().toString() + Math.random().toString(16).slice(2),
-                author: currentUser,
-                title: title,
-                content: content,
-                feeling: document.getElementById('feeling').value,
-                image: imageUpload.files.length > 0 ? preview.src : ''
+                loadPosts();
             };
 
-            renderPost(post);
-            posts.unshift(post);
+            card.appendChild(deleteButton);
+        }
 
-            try {
-                localStorage.setItem(storageKey, JSON.stringify(posts));
-            } catch (error) {
-                alert('This post was added, but could not be saved. The image may be too large.');
-            }
+        postsContainer.appendChild(card);
+    });
+}
 
-            form.reset();
-            moodChoices.forEach(function (button) {
-                button.setAttribute('aria-pressed', 'false');
-            });
-            preview.src = '#';
-            preview.style.display = 'none';
+form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const user = await getCurrentUser();
+
+    if (!user) {
+        alert("Please log in first.");
+        return;
+    }
+
+    let imageUrl = "";
+
+    if (imageUpload.files[0]) {
+        const file = imageUpload.files[0];
+        const fileName = crypto.randomUUID() + "-" + file.name;
+
+        const upload = await supabase.storage
+            .from("images")
+            .upload(fileName, file);
+
+        if (!upload.error) {
+            imageUrl = supabase.storage
+                .from("images")
+                .getPublicUrl(fileName)
+                .data.publicUrl;
+        }
+    }
+
+    const { error } = await supabase
+        .from("posts")
+        .insert({
+            author_id: user.id,
+            title: document.getElementById("title").value,
+            content: document.getElementById("content").value,
+            feeling: feelingInput.value,
+            image_url: imageUrl
         });
+
+    if (error) {
+        alert(error.message);
+        return;
+    }
+
+    form.reset();
+    loadPosts();
+});
+
+loadPosts();
     </script>
   </body>
 </html>
