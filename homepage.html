@@ -487,6 +487,8 @@ async function loadPosts() {
         postsContainer.appendChild(card);
     });
 }
+          supabase.storage
+  .from("images")
 
 form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -497,6 +499,7 @@ form.addEventListener("submit", async (event) => {
         alert("Please log in first.");
         return;
     }
+
 
     let imageUrl = "";
 
