@@ -1,0 +1,15 @@
+/*
+  Use the following to include this css file
+  <link rel="stylesheet" href="styles1.css" />
+*/
+p {
+  color: blue;
+}
+
+  background-image:url(https://uploads.onecompiler.io/452ndjzsa/1788880979553/fam%20foto.jpg);
+
+background-repeat:no-repeat;
+
+background-position:top left;
+
+background-attachment:fixed;

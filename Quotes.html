@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>~* Quotes *~</title>
+    <style>
+      /* Match the classic blog look while letting the page use the full browser width. */
+      body {
+        background-color: #e5e5e5;
+        font-family: Verdana, Geneva, Tahoma, sans-serif;
+        font-size: 12px;
+        color: #000;
+        margin: 0;
+        padding: 20px;
+      }
+
+      a {
+        color: #003399;
+        text-decoration: none;
+        font-weight: bold;
+      }
+
+      a:hover {
+        text-decoration: underline;
+        color: #ff007f;
+      }
+
+      header {
+        background-color: #003399;
+        color: #fff;
+        padding: 15px;
+        text-align: center;
+        margin-bottom: 15px;
+        border: 1px dashed #fff;
+      }
+
+      header h1 {
+        margin: 0;
+        font-size: 24px;
+        font-family: 'Comic Sans MS', 'Arial', sans-serif;
+        letter-spacing: 2px;
+      }
+
+      .panel, .quote {
+        box-sizing: border-box;
+        width: 100%;
+        margin: 16px 0;
+        padding: 20px;
+        background-color: #fff;
+        border: 2px solid #003399;
+        box-shadow: 4px 4px 0 #888;
+      }
+
+      .filters {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+
+      input, textarea, button {
+        box-sizing: border-box;
+        width: 100%;
+        padding: 9px;
+        font: inherit;
+      }
+
+      textarea {
+        min-height: 90px;
+        resize: vertical;
+      }
+
+      button {
+        width: auto;
+        margin-top: 10px;
+        border: 0;
+        background: #003399;
+        color: #fff;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: #ff007f;
+      }
+
+      .quote-text {
+        margin: 0 0 12px;
+        font-size: 16px;
+        font-style: italic;
+        overflow-wrap: anywhere;
+      }
+
+      .quote-meta {
+        margin: 0;
+        color: #444;
+      }
+
+      #page-message {
+        min-height: 1em;
+      }
+    </style>
+    <link rel="stylesheet" href="social-theme.css">
+  </head>
+  <body class="theme-eco">
+    <p><a href="homepage.html">← Back to blog</a></p>
+    <header>
+      <h1>~* Quotes *~</h1>
+      <p>A collection of things people have said</p>
+    </header>
+
+    <section class="panel" aria-labelledby="search-heading">
+      <h2 id="search-heading">Search quotes</h2>
+      <p>Fill in one or more fields. Filters search the speaker, the date and time, and the quote.</p>
+      <div class="filters">
+        <div>
+          <label for="search-name">Name</label>
+          <input id="search-name" type="search" placeholder="Search by speaker">
+        </div>
+        <div>
+          <label for="search-time">Time</label>
+          <input id="search-time" type="search" placeholder="Date or time">
+        </div>
+        <div>
+          <label for="search-quote">Quote</label>
+          <input id="search-quote" type="search" placeholder="Search quote text">
+        </div>
+      </div>
+      <p id="result-count" role="status"></p>
+    </section>
+
+    <section class="panel" aria-labelledby="add-heading">
+      <h2 id="add-heading">Add a quote</h2>
+      <p id="sign-in-note"></p>
+      <form id="quote-form">
+        <label for="quote-input">What did they say?</label>
+        <textarea id="quote-input" maxlength="1000" required placeholder="Write a quote..."></textarea>
+        <label for="quote-time">When was it said?</label>
+        <input id="quote-time" type="datetime-local" required>
+        <button type="submit">Add quote</button>
+      </form>
+      <p id="page-message" role="status"></p>
+    </section>
+
+    <main id="quotes-list" aria-live="polite"></main>
+
+    <script>
+      // Quotes are saved in this browser, using the same localStorage approach as blog posts.
+      const quotesKey = 'blogQuotes';
+      const currentUser = localStorage.getItem('currentUser') || '';
+      const quoteForm = document.getElementById('quote-form');
+      const quoteInput = document.getElementById('quote-input');
+      const quoteTimeInput = document.getElementById('quote-time');
+      const quotesList = document.getElementById('quotes-list');
+      const resultCount = document.getElementById('result-count');
+      const pageMessage = document.getElementById('page-message');
+      const searchName = document.getElementById('search-name');
+      const searchTime = document.getElementById('search-time');
+      const searchQuote = document.getElementById('search-quote');
+      const signInNote = document.getElementById('sign-in-note');
+      let quotes = [];
+
+      // Start with the current local date and time; authors can change it before posting.
+      const now = new Date();
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+      quoteTimeInput.value = now.toISOString().slice(0, 16);
+
+      // Browsing and searching are public; adding a quote requires a signed-in account.
+      if (!currentUser) {
+        signInNote.textContent = 'Log in to add a quote. You can still browse and search the list.';
+        quoteForm.hidden = true;
+      } else {
+        signInNote.textContent = 'Your quote will be posted under ' + currentUser + '.';
+      }
+
+      try {
+        const savedQuotes = JSON.parse(localStorage.getItem(quotesKey) || '[]');
+        quotes = Array.isArray(savedQuotes) ? savedQuotes : [];
+      } catch (error) {
+        quotes = [];
+      }
+
+      function renderQuotes() {
+        const nameQuery = searchName.value.trim().toLowerCase();
+        const timeQuery = searchTime.value.trim().toLowerCase();
+        const quoteQuery = searchQuote.value.trim().toLowerCase();
+        const matchingQuotes = quotes.filter(function (quote) {
+          const date = new Date(quote.time);
+          const timeText = isNaN(date.getTime()) ? String(quote.time || '') :
+            date.toLocaleString() + ' ' + date.toISOString();
+          return String(quote.author || '').toLowerCase().includes(nameQuery) &&
+            timeText.toLowerCase().includes(timeQuery) &&
+            String(quote.text || '').toLowerCase().includes(quoteQuery);
+        }).slice().sort(function (first, second) {
+          return String(second.time || '').localeCompare(String(first.time || ''));
+        });
+
+        quotesList.replaceChildren();
+        resultCount.textContent = matchingQuotes.length +
+          (matchingQuotes.length === 1 ? ' quote found.' : ' quotes found.');
+
+        if (matchingQuotes.length === 0) {
+          const emptyMessage = document.createElement('p');
+          emptyMessage.className = 'panel';
+          emptyMessage.textContent = quotes.length ? 'No quotes match those searches.' :
+            'No quotes yet. Sign in and add the first one!';
+          quotesList.appendChild(emptyMessage);
+          return;
+        }
+
+        matchingQuotes.forEach(function (quote) {
+          const card = document.createElement('article');
+          card.className = 'quote';
+
+          const text = document.createElement('p');
+          text.className = 'quote-text';
+          text.textContent = '“' + quote.text + '”';
+
+          const meta = document.createElement('p');
+          meta.className = 'quote-meta';
+          const date = new Date(quote.time);
+          meta.textContent = '— ' + (quote.author || 'Unknown') + ' · ' +
+            (isNaN(date.getTime()) ? 'Time unknown' : date.toLocaleString());
+
+          card.append(text, meta);
+          quotesList.appendChild(card);
+        });
+      }
+
+      [searchName, searchTime, searchQuote].forEach(function (field) {
+        field.addEventListener('input', renderQuotes);
+      });
+
+      quoteForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        if (!currentUser) return;
+
+        const text = quoteInput.value.trim();
+        if (!text) return;
+
+        const quoteDate = new Date(quoteTimeInput.value);
+        if (isNaN(quoteDate.getTime())) {
+          pageMessage.textContent = 'Please choose a valid date and time for the quote.';
+          return;
+        }
+
+        quotes.push({
+          id: Date.now().toString() + Math.random().toString(16).slice(2),
+          author: currentUser,
+          text: text,
+          time: quoteDate.toISOString()
+        });
+
+        try {
+          localStorage.setItem(quotesKey, JSON.stringify(quotes));
+          quoteInput.value = '';
+          pageMessage.textContent = 'Your quote was added.';
+          renderQuotes();
+        } catch (error) {
+          quotes.pop();
+          pageMessage.textContent = 'Could not save the quote in this browser.';
+        }
+      });
+
+      renderQuotes();
+    </script>
+  </body>
+</html>

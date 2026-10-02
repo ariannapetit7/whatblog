@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Friends &amp; Chat</title>
+    <style>
+      body {
+        background-color: #e5e5e5;
+        font-family: Verdana, Geneva, Tahoma, sans-serif;
+        font-size: 12px;
+        color: #000;
+        margin: 0;
+        padding: 20px;
+      }
+
+      a {
+        color: #003399;
+        text-decoration: none;
+        font-weight: bold;
+      }
+
+      a:hover {
+        text-decoration: underline;
+        color: #ff007f;
+      }
+
+      header {
+        background-color: #003399;
+        color: #fff;
+        padding: 15px;
+        text-align: center;
+        margin-bottom: 15px;
+        border: 1px dashed #fff;
+      }
+
+      header h1 {
+        margin: 0;
+        font-size: 24px;
+        font-family: 'Comic Sans MS', 'Arial', sans-serif;
+        letter-spacing: 2px;
+      }
+
+      .panel {
+        box-sizing: border-box;
+        width: 100%;
+        margin: 16px 0;
+        padding: 20px;
+        background-color: #fff;
+        border: 2px solid #003399;
+        box-shadow: 4px 4px 0 #888;
+      }
+
+      input, textarea, button {
+        box-sizing: border-box;
+        padding: 9px;
+        font: inherit;
+      }
+
+      input, textarea {
+        width: 100%;
+      }
+
+      textarea {
+        min-height: 70px;
+        resize: vertical;
+      }
+
+      button {
+        margin-top: 10px;
+        border: 0;
+        background: #003399;
+        color: #fff;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: #ff007f;
+      }
+
+      .friend-button {
+        display: block;
+        width: 100%;
+        text-align: left;
+      }
+
+      .message {
+        margin: 10px 0;
+        padding: 10px;
+        border: 1px solid rgba(255, 255, 255, .95);
+        border-radius: 12px;
+        background: linear-gradient(150deg, rgba(255, 255, 255, .98), rgba(223, 248, 255, .94) 48%, rgba(189, 235, 247, .9));
+        box-shadow: inset 0 2px 0 rgba(255, 255, 255, .95), inset 0 -2px 5px rgba(48, 151, 184, .12), 0 3px 8px rgba(36, 119, 148, .18);
+        overflow-wrap: anywhere;
+      }
+
+      .message-meta {
+        margin-top: 6px;
+        color: #555;
+        font-size: 11px;
+      }
+
+      #page-message {
+        min-height: 1em;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      @media (min-width: 700px) {
+        .layout {
+          display: grid;
+          grid-template-columns: minmax(200px, 1fr) minmax(0, 2fr);
+          gap: 16px;
+          align-items: start;
+        }
+      }
+    </style>
+    <link rel="stylesheet" href="social-theme.css">
+  </head>
+  <body class="theme-evil">
+    <p><a href="homepage.html">← Back to blog</a></p>
+    <header>
+      <h1>Friends &amp; Chat</h1>
+      <p>Add friends by username and send them a message</p>
+    </header>
+
+    <p id="page-message" role="status"></p>
+    <p id="sign-in-note"></p>
+
+    <div class="layout">
+      <aside>
+        <section class="panel" id="add-friend-panel">
+          <h2>Add a friend</h2>
+          <form id="friend-form">
+            <label for="friend-name">Their username</label>
+            <input id="friend-name" type="text" minlength="4" maxlength="10" required placeholder="Enter username">
+            <button type="submit">Add friend</button>
+          </form>
+        </section>
+
+        <section class="panel">
+          <h2>Your friends</h2>
+          <div id="friends-list"></div>
+        </section>
+      </aside>
+
+      <main class="panel" id="chat-panel">
+        <h2 id="chat-heading">Choose a friend to chat</h2>
+        <div id="messages" aria-live="polite"></div>
+        <form id="message-form" hidden>
+          <label for="message-input">Message</label>
+          <textarea id="message-input" maxlength="2000" required placeholder="Write a message..."></textarea>
+          <button type="submit">Send</button>
+        </form>
+      </main>
+    </div>
+
+    <script>
+      // These records use localStorage, matching the accounts created by signup.html.
+      const currentUser = localStorage.getItem('currentUser') || '';
+      const userKey = currentUser.toLowerCase();
+      const friendsKey = 'blogFriends';
+      const messagesKey = 'blogMessages';
+      const pageMessage = document.getElementById('page-message');
+      const signInNote = document.getElementById('sign-in-note');
+      const friendForm = document.getElementById('friend-form');
+      const friendNameInput = document.getElementById('friend-name');
+      const friendsList = document.getElementById('friends-list');
+      const chatHeading = document.getElementById('chat-heading');
+      const messagesContainer = document.getElementById('messages');
+      const messageForm = document.getElementById('message-form');
+      const messageInput = document.getElementById('message-input');
+      let selectedFriend = '';
+
+      // Safely read an object from localStorage, returning an empty object if it is missing or invalid.
+      function readObject(key) {
+        try {
+          const value = JSON.parse(localStorage.getItem(key) || '{}');
+          return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+        } catch (error) {
+          return {};
+        }
+      }
+
+      function getFriends() {
+        const friends = readObject(friendsKey);
+        return Array.isArray(friends[userKey]) ? friends[userKey] : [];
+      }
+
+      function getConversationKey(firstUser, secondUser) {
+        return JSON.stringify([firstUser.toLowerCase(), secondUser.toLowerCase()].sort());
+      }
+
+      function renderMessages() {
+        messagesContainer.replaceChildren();
+        if (!selectedFriend) {
+          chatHeading.textContent = 'Choose a friend to chat';
+          messageForm.hidden = true;
+          return;
+        }
+
+        chatHeading.textContent = 'Chat with ' + selectedFriend;
+        messageForm.hidden = !currentUser;
+        const allMessages = readObject(messagesKey);
+        const conversation = allMessages[getConversationKey(currentUser, selectedFriend)];
+
+        if (!Array.isArray(conversation) || conversation.length === 0) {
+          const emptyMessage = document.createElement('p');
+          emptyMessage.textContent = 'No messages yet. Start the conversation!';
+          messagesContainer.appendChild(emptyMessage);
+          return;
+        }
+
+        conversation.forEach(function (item) {
+          const message = document.createElement('article');
+          message.className = 'message';
+          const text = document.createElement('div');
+          text.textContent = item.text || '';
+          const meta = document.createElement('div');
+          meta.className = 'message-meta';
+          const date = new Date(item.time);
+          meta.textContent = (item.author || 'Unknown') + ' · ' +
+            (isNaN(date.getTime()) ? 'Time unknown' : date.toLocaleString());
+          message.append(text, meta);
+          messagesContainer.appendChild(message);
+        });
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+
+      function renderFriends() {
+        friendsList.replaceChildren();
+        const friends = getFriends();
+        if (friends.length === 0) {
+          const emptyMessage = document.createElement('p');
+          emptyMessage.textContent = 'No friends added yet.';
+          friendsList.appendChild(emptyMessage);
+        }
+
+        friends.forEach(function (friend) {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'friend-button';
+          button.textContent = friend;
+          button.addEventListener('click', function () {
+            selectedFriend = friend;
+            renderMessages();
+          });
+          friendsList.appendChild(button);
+        });
+      }
+
+      if (!currentUser) {
+        signInNote.textContent = 'Log in to add friends and chat.';
+        friendForm.hidden = true;
+        messageForm.hidden = true;
+      } else {
+        signInNote.textContent = 'Signed in as ' + currentUser + '.';
+      }
+
+      friendForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        if (!currentUser) return;
+
+        const requestedName = friendNameInput.value.trim();
+        const requestedKey = requestedName.toLowerCase();
+        const accounts = readObject('blogAccounts');
+        const account = Object.values(accounts).find(function (item) {
+          return item && typeof item.username === 'string' && item.username.toLowerCase() === requestedKey;
+        });
+
+        if (!account) {
+          pageMessage.textContent = 'No account found with that username.';
+          return;
+        }
+        if (requestedKey === userKey) {
+          pageMessage.textContent = 'You cannot add yourself as a friend.';
+          return;
+        }
+
+        const allFriends = readObject(friendsKey);
+        allFriends[userKey] = Array.isArray(allFriends[userKey]) ? allFriends[userKey] : [];
+        allFriends[requestedKey] = Array.isArray(allFriends[requestedKey]) ? allFriends[requestedKey] : [];
+        if (allFriends[userKey].some(function (name) { return name.toLowerCase() === requestedKey; })) {
+          pageMessage.textContent = 'You are already friends with ' + account.username + '.';
+          return;
+        }
+
+        // Adding is mutual in this simple version, so either account can open the same chat later.
+        allFriends[userKey].push(account.username);
+        allFriends[requestedKey].push(currentUser);
+        try {
+          localStorage.setItem(friendsKey, JSON.stringify(allFriends));
+          selectedFriend = account.username;
+          friendNameInput.value = '';
+          pageMessage.textContent = 'You and ' + account.username + ' are now friends.';
+          renderFriends();
+          renderMessages();
+        } catch (error) {
+          pageMessage.textContent = 'Could not save the friend list in this browser.';
+        }
+      });
+
+      messageForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        const text = messageInput.value.trim();
+        if (!currentUser || !selectedFriend || !text) return;
+
+        const allMessages = readObject(messagesKey);
+        const conversationKey = getConversationKey(currentUser, selectedFriend);
+        allMessages[conversationKey] = Array.isArray(allMessages[conversationKey]) ? allMessages[conversationKey] : [];
+        allMessages[conversationKey].push({
+          author: currentUser,
+          text: text,
+          time: new Date().toISOString()
+        });
+
+        try {
+          localStorage.setItem(messagesKey, JSON.stringify(allMessages));
+          messageInput.value = '';
+          pageMessage.textContent = '';
+          renderMessages();
+        } catch (error) {
+          pageMessage.textContent = 'Could not save this message in this browser.';
+        }
+      });
+
+      // Refresh conversations and friend lists when another tab changes saved data.
+      window.addEventListener('storage', function (event) {
+        if (event.key === friendsKey) renderFriends();
+        if (event.key === messagesKey) renderMessages();
+      });
+
+      renderFriends();
+      renderMessages();
+    </script>
+  </body>
+</html>

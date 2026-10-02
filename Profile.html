@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile</title>
+    <style>
+      /* Page-wide appearance: the profile uses a simple centered, readable layout. */
+      body {
+        background-color: #e5e5e5;
+        font-family: Verdana, Geneva, Tahoma, sans-serif;
+        font-size: 12px;
+        color: #000;
+        margin: 0;
+        padding: 0;
+      }
+
+      /* Let profile content use the full browser width instead of a narrow centered column. */
+      main {
+        width: 100%;
+        margin: 0;
+      }
+
+      main > p,
+      main > header,
+      main > #profile-message,
+      .editor-section {
+        margin-left: 20px;
+        margin-right: 20px;
+      }
+
+      a {
+        color: #003399;
+        text-decoration: none;
+        font-weight: bold;
+      }
+
+      a:hover {
+        text-decoration: underline;
+        color: #ff007f;
+      }
+
+      header {
+        background-color: #003399;
+        color: #fff;
+        padding: 15px;
+        text-align: center;
+        margin-bottom: 15px;
+        border: 1px dashed #fff;
+      }
+
+      header h1 {
+        margin: 0;
+        font-size: 24px;
+        font-family: 'Comic Sans MS', 'Arial', sans-serif;
+        letter-spacing: 2px;
+      }
+
+      .profile-preview-section {
+        width: 100%;
+        margin: 16px 0;
+      }
+
+      .editor-section {
+        margin: 24px 0;
+      }
+
+      .editor-section textarea {
+        padding: 8px;
+      }
+
+      .editor-section button {
+        background-color: #003399;
+      }
+
+      .editor-section button:hover {
+        background-color: #ff007f;
+      }
+
+      @media (max-width: 600px) {
+        main > p,
+        main > header,
+        main > #profile-message,
+        .editor-section {
+          margin-left: 12px;
+          margin-right: 12px;
+        }
+      }
+
+      label {
+        display: block;
+        margin: 14px 0 6px;
+        font-weight: bold;
+      }
+
+      textarea {
+        box-sizing: border-box;
+        width: 100%;
+        min-height: 180px;
+        font: 13px monospace;
+      }
+
+      /* The custom profile preview fills the browser width and at least one full viewport height. */
+      #profile-preview {
+        display: block;
+        box-sizing: border-box;
+        width: 100%;
+        height: 100vh;
+        min-height: 100vh;
+        border: 0;
+        background: transparent;
+      }
+
+      button, .button-link {
+        display: inline-block;
+        margin-top: 12px;
+        padding: 9px 14px;
+        border: 0;
+        border-radius: 4px;
+        background: #003399;
+        color: white;
+        font: inherit;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      #profile-message {
+        min-height: 1em;
+      }
+    </style>
+    <link rel="stylesheet" href="social-theme.css">
+  </head>
+  <body class="theme-red">
+    <main>
+      <!-- href navigates back to the blog page. -->
+      <p><a href="homepage.html">← Back to blog</a></p>
+      <header>
+        <h1 id="profile-heading">Profile</h1>
+      </header>
+      <!-- id lets JavaScript update this; role="status" announces updates accessibly. -->
+      <p id="profile-message" role="status"></p>
+
+      <section class="profile-preview-section">
+        <!-- title names the frame for assistive technology; empty sandbox disables scripts and other active content. -->
+        <iframe id="profile-preview" title="Profile preview" sandbox=""></iframe>
+      </section>
+
+      <!-- hidden keeps the owner-only editor out of view until JavaScript confirms ownership. -->
+      <section class="editor-section" id="profile-editor" hidden>
+        <h2>Edit your profile</h2>
+        <p>Write HTML and CSS for your profile. Scripts are disabled in the preview.</p>
+        <!-- for links each label to the textarea with the matching id. -->
+        <label for="profile-html">HTML</label>
+        <!-- id is used by JavaScript; spellcheck="false" avoids browser spellchecking code. -->
+        <textarea id="profile-html" spellcheck="false"><h2>Hello!</h2>
+<p>Welcome to my profile.</p></textarea>
+        <label for="profile-css">CSS</label>
+        <!-- This second textarea holds the profile's CSS, independently from its HTML. -->
+        <textarea id="profile-css" spellcheck="false">body {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+  background: lavender;
+  color: midnightblue;
+}</textarea>
+        <!-- type="button" prevents this save control from submitting a form. -->
+        <button id="save-profile" type="button">Save profile</button>
+      </section>
+    </main>
+
+    <script>
+      // Read the signed-in name and saved accounts from this browser's localStorage.
+      const currentUser = localStorage.getItem('currentUser') || '';
+      const accounts = JSON.parse(localStorage.getItem('blogAccounts') || '{}');
+      // ?user=... lets a post link request another account's public profile.
+      const requestedUser = new URLSearchParams(window.location.search).get('user');
+      const userKey = (requestedUser || currentUser).toLowerCase();
+      const profileAccount = Object.values(accounts).find(function (account) {
+        return account.username.toLowerCase() === userKey;
+      });
+      const heading = document.getElementById('profile-heading');
+      const message = document.getElementById('profile-message');
+      const editor = document.getElementById('profile-editor');
+      const htmlInput = document.getElementById('profile-html');
+      const cssInput = document.getElementById('profile-css');
+      const preview = document.getElementById('profile-preview');
+            // Profiles are stored separately from account credentials, keyed by username.
+      const profilesKey = 'blogProfiles';
+
+
+      // If the requested account does not exist, return to the login page.
+      if (!profileAccount) {
+        window.location.href = 'index.html';
+      } else {
+        heading.textContent = profileAccount.username + "'s profile";
+        // Editing is shown only when the signed-in account matches this profile owner.
+        const canEdit = Boolean(
+          currentUser &&
+          accounts[currentUser.toLowerCase()] &&
+          profileAccount.username.toLowerCase() === currentUser.toLowerCase()
+        );
+        editor.hidden = !canEdit;
+
+        let profiles = {};
+        try {
+          profiles = JSON.parse(localStorage.getItem(profilesKey) || '{}');
+        } catch (error) {
+          profiles = {};
+        }
+
+        const savedProfile = profiles[userKey];
+        if (savedProfile) {
+          htmlInput.value = savedProfile.html || '';
+          cssInput.value = savedProfile.css || '';
+        }
+
+        // Put the owner's HTML and CSS into the isolated preview; input events keep it live.
+        function updatePreview() {
+          preview.srcdoc = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>' +
+            cssInput.value + '</style></head><body>' + htmlInput.value + '</body></html>';
+        }
+
+        updatePreview();
+        htmlInput.addEventListener('input', updatePreview);
+        cssInput.addEventListener('input', updatePreview);
+
+        // Save this account's HTML/CSS pair in localStorage for the next visit.
+        document.getElementById('save-profile').addEventListener('click', function () {
+          if (!canEdit) return;
+          try {
+            profiles[userKey] = { html: htmlInput.value, css: cssInput.value };
+            localStorage.setItem(profilesKey, JSON.stringify(profiles));
+            message.textContent = 'Your profile has been saved.';
+          } catch (error) {
+            message.textContent = 'Could not save the profile in this browser.';
+          }
+        });
+      }
+    </script>
+  </body>
+</html>
