@@ -441,9 +441,12 @@ async function loadPosts() {
     postsContainer.innerHTML = "";
 
     const { data, error } = await supabase
-        .from("posts")
-        .select(`*, profiles!posts_author_id_fkey(username)`)
-        .order("created_at", { ascending: false });
+    .from("posts")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+console.log(data);
+console.log(error);
 
     if (error) {
         console.error(error);
