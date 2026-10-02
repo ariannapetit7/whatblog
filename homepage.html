@@ -382,7 +382,7 @@ input[type="hidden"]#feeling {
     </form>
     </div>
     <div id="posts"></div>
-        <script>
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
           https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2script>
 const supabaseUrl = "https://btrycwhwyddoutgmzilo.supabase.co";
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0cnljd2h3eWRkb3V0Z216aWxvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5Mjg3ODUsImV4cCI6MjEwNjUwNDc4NX0.BgV-WY5BtV-HsKqa0HqhNRSRo0zzOuYJYF1ZliXrRqs";
@@ -487,8 +487,7 @@ async function loadPosts() {
         postsContainer.appendChild(card);
     });
 }
-          supabase.storage
-  .from("images")
+        
 
 form.addEventListener("submit", async (event) => {
     event.preventDefault();
