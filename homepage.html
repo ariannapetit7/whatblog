@@ -384,8 +384,8 @@ input[type="hidden"]#feeling {
     <div id="posts"></div>
         <script>
           https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2script>
-const supabaseUrl = "https://supabase.com/dashboard/project/btrycwhwyddoutgmzilo";
-const supabaseKey = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2script>";
+const supabaseUrl = "https://btrycwhwyddoutgmzilo.supabase.co/rest/v1/";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0cnljd2h3eWRkb3V0Z216aWxvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5Mjg3ODUsImV4cCI6MjEwNjUwNDc4NX0.BgV-WY5BtV-HsKqa0HqhNRSRo0zzOuYJYF1ZliXrRqs";
 const supabase = window.supabase.createClient(
   supabaseUrl,
   supabaseKey
@@ -398,6 +398,16 @@ const preview = document.getElementById("preview");
 const feelingInput = document.getElementById("feeling");
 const moodChoices = document.querySelectorAll(".mood-choice");
 
+          (async () => {
+  const {
+    data: { session }
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    window.location.href = "index.html";
+  }
+})();
+          
 moodChoices.forEach(button => {
     button.addEventListener("click", () => {
         const mood = button.dataset.mood;
