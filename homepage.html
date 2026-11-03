@@ -383,6 +383,7 @@ input[type="hidden"]#feeling {
     </div>
     <div id="posts"></div>
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
     
     <script>     
       
@@ -390,10 +391,7 @@ console.log("SCRIPT LOADED");
       
 const supabaseUrl = "https://btrycwhwyddoutgmzilo.supabase.co";
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0cnljd2h3eWRkb3V0Z216aWxvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5Mjg3ODUsImV4cCI6MjEwNjUwNDc4NX0.BgV-WY5BtV-HsKqa0HqhNRSRo0zzOuYJYF1ZliXrRqs";
-const supabase = window.supabase.createClient(
-  supabaseUrl,
-  supabaseKey
-);
+const supabase = window.appSupabase;
 
        const form = document.getElementById("postForm");
 const postsContainer = document.getElementById("posts");
@@ -450,6 +448,7 @@ console.log(error);
 
     if (error) {
         console.error(error);
+        postsContainer.textContent = "Unable to load posts: " + error.message;
         return;
     }
 
